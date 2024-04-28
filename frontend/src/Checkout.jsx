@@ -1,6 +1,17 @@
 import * as React from 'react';
 import PropTypes from 'prop-types';
 
+import { useEffect, useState } from "react";
+import {
+  AppConfig,
+  UserSession,
+  showConnect,
+  openContractCall,
+} from "@stacks/connect";
+import { StacksTestnet, StacksMocknet } from "@stacks/network";
+import { principalCV, makeContractCall, callReadOnlyFunction, cvToJSON } from "@stacks/transactions";
+
+
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -100,6 +111,26 @@ export default function Checkout() {
 
   const handleBack = () => {
     setActiveStep(activeStep - 1);
+  };
+
+  const boost = async (e) => {
+    // submit transaction
+    e.preventDefault();
+
+    const network = new StacksMocknet({url: "https://api.platform.hiro.so/v1/ext/f183af312b00bacf5564a91d0c5f00a1/stacks-blockchain-api"});
+
+    const transactionId = "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM"
+
+    const options = {
+      contractAddress: "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM",
+      contractName: "bounter",
+      functionName: "encrypt-string",
+      functionArgs: [principalCV(transactionId)],
+      network,
+    //   senderAddress: "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM",
+    };
+
+    await openContractCall(options);
   };
 
   return (
@@ -307,6 +338,12 @@ export default function Checkout() {
                 >
                   Go to Menu
                 </Button>
+                <button
+            className="p-4 bg-indigo-500 rounded text-white"
+            onClick={boost}
+          >
+            Stacks Confirm
+          </button>
               </Stack>
             ) : (
               <React.Fragment>
@@ -361,6 +398,8 @@ export default function Checkout() {
                   >
                     {activeStep === steps.length - 1 ? 'Place order' : 'Next'}
                   </Button>
+
+
                 </Box>
               </React.Fragment>
             )}
