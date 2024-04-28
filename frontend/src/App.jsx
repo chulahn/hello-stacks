@@ -1,13 +1,21 @@
 import { useEffect, useState } from "react";
-import { AppConfig, UserSession, showConnect, openContractCall } from "@stacks/connect";
-import { StacksMocknet } from "@stacks/network";
-import { stringUtf8CV } from '@stacks/transactions'
+import {
+  AppConfig,
+  UserSession,
+  showConnect,
+  openContractCall,
+} from "@stacks/connect";
+import { StacksTestnet, StacksMocknet } from "@stacks/network";
+import { principalCV, makeContractCall, callReadOnlyFunction, cvToJSON } from "@stacks/transactions";
 
 function App() {
   const [message, setMessage] = useState("");
   const [transactionId, setTransactionId] = useState("");
   const [currentMessage, setCurrentMessage] = useState("");
   const [userData, setUserData] = useState(undefined);
+  // const [netWork, setNetWork] = useState(new StacksMocknet({url: "https://api.platform.hiro.so/v1/ext/f183af312b00bacf5564a91d0c5f00a1/stacks-blockchain-api"}))
+
+  // const netWork = new StacksMocknet({url: "https://api.platform.hiro.so/v1/ext/f183af312b00bacf5564a91d0c5f00a1/stacks-blockchain-api"});
 
   const appConfig = new AppConfig(["store_write"]);
   const userSession = new UserSession({ appConfig });
@@ -41,35 +49,61 @@ function App() {
   };
 
   const submitMessage = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    const network = new StacksMocknet()
+    const network = new StacksMocknet({url: "https://api.platform.hiro.so/v1/ext/f183af312b00bacf5564a91d0c5f00a1/stacks-blockchain-api"});
 
     const options = {
-      contractAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-      contractName: 'hello-stacks',
-      functionName: 'write-message',
-      functionArgs: [
-        stringUtf8CV(message),
-      ],
+      contractAddress: "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM",
+      contractName: "bounter",
+      functionName: "count-up",
+      functionArgs: null,
       network,
-      appDetails,
-      onFinish: ({ txId }) => console.log(txId)
-    }
+      // appDetails,
+      onFinish: ({ txId }) => console.log(txId),
+    };
 
-    await openContractCall(options)
+    await openContractCall(options);
   };
 
   const handleTransactionChange = (e) => {
     setTransactionId(e.target.value);
   };
 
-  const retrieveMessage = async () => {
-    const retrievedMessage = await fetch('http://localhost:3999/extended/v1/tx/events?' + new URLSearchParams({
-        tx_id: transactionId
-    }))
-    const responseJson = await retrievedMessage.json()
-    setCurrentMessage(responseJson.events[0].contract_log.value.repr)
+  const retrieveMessage = async (e) => {
+    // submit transaction
+    e.preventDefault();
+
+    const network = new StacksMocknet({url: "https://api.platform.hiro.so/v1/ext/f183af312b00bacf5564a91d0c5f00a1/stacks-blockchain-api"});
+
+    const options = {
+      contractAddress: "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM",
+      contractName: "bounter",
+      functionName: "get-count",
+      functionArgs: [principalCV(transactionId)],
+      network,
+      senderAddress: "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM",
+    };
+
+    console.log(cvToJSON(await callReadOnlyFunction(options)));
+  };
+
+  const boost = async (e) => {
+    // submit transaction
+    e.preventDefault();
+
+    const network = new StacksMocknet({url: "https://api.platform.hiro.so/v1/ext/f183af312b00bacf5564a91d0c5f00a1/stacks-blockchain-api"});
+
+    const options = {
+      contractAddress: "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM",
+      contractName: "bounter",
+      functionName: "add-2",
+      functionArgs: [principalCV(transactionId)],
+      network,
+      senderAddress: "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM",
+    };
+
+    await makeContractCall(options);
   };
 
   return (
@@ -93,7 +127,7 @@ function App() {
           />
           <button
             className="p-4 bg-indigo-500 rounded text-white"
-            onClick={submitMessage}
+            onClick={boost}
           >
             Submit New Message
           </button>
